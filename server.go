@@ -6,8 +6,8 @@ import (
 	"log"
 	"io"
 	"net/http"
-
 	"github.com/Jtog123/OmniGlobe/internal/worldbank"
+	"github.com/Jtog123/OmniGlobe/internal/country"
 )
 
 // World Bank request string example
@@ -43,9 +43,9 @@ func main() {
 
 //Assemble a list of all countries IS03's
 
-var country = "FRA"
+var addCountry = "FRA"
 var year = "2025"
-var requestString = fmt.Sprintf("https://api.worldbank.org/v2/country/%s/indicator/NY.GDP.MKTP.CD?format=json&date=%s", country, year)
+var requestString = fmt.Sprintf("https://api.worldbank.org/v2/country/%s/indicator/NY.GDP.MKTP.CD?format=json&date=%s", addCountry, year)
 
 func makeRequest() {
 	fmt.Println("making request!!")
@@ -99,35 +99,7 @@ func makeRequest() {
 	fmt.Println("data:", data[0])
 }
 
-func requestCountryByISO3(iso3Code string) {
 
-	var formatString = fmt.Sprintf("http://api.worldbank.org/v2/country/%s/?format=json", iso3Code)
-
-	resp, err := http.Get(
-		formatString,
-	)
-	if err != nil {
-		log.Fatalf("Failed to send request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Failed to read response: %v", err)
-	}
-
-	fmt.Println(string(body))
-	var response []json.RawMessage
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		log.Fatalf("Failed to decode JSON envelope: %v", err)
-	}
-
-	fmt.Println(string(response[0]))
-
-
-
-}
 
 //retrieve all ISO3 idents for now
 func getISO3Identifier() {
@@ -161,7 +133,93 @@ func getISO3Identifier() {
 	}
 }
 
+
+func requestCountryByISO3(iso3Code string) country.Country {
+
+	var countryFormatString = fmt.Sprintf("http://api.worldbank.org/v2/country/%s/?format=json", iso3Code)
+
+	resp, err := http.Get(
+		countryFormatString,
+	)
+	if err != nil {
+		log.Fatalf("Failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response: %v", err)
+	}
+
+	//fmt.Println(string(body))
+	var response []json.RawMessage
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Fatalf("Failed to decode JSON envelope: %v", err)
+	}
+
+	////// NOW GET GDP DATA
+
+	var countryGDPFormatString = fmt.Sprintf("https://api.worldbank.org/v2/country/%s/indicator/NY.GDP.MKTP.CD/?date=2025&format=json", iso3Code)
+	resp2, err := http.Get(
+		countryGDPFormatString,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to send request: %v", err)
+	}
+	defer resp2.Body.Close()
+
+	body2, err := io.ReadAll(resp2.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response: %v", err)
+	}
+
+	var response2 []json.RawMessage
+	err = json.Unmarshal(body2, &response2)
+	if err != nil {
+		log.Fatalf("Failed to decode JSON envelope: %v", err)
+	}
+
+	fmt.Println(string(response2[1]))
+
+
+	//store in Country struct
+	//fmt.Println(string(response[1]))
+	var countryInfoData []country.CountryResponse
+	err = json.Unmarshal(response[1], &countryInfoData)
+	if err != nil {
+		log.Fatalf("Failed to decode data: %v", err)
+	}
+
+	var countryGDPData []country.CountryGDPResponse
+	err = json.Unmarshal(response2[1], &countryGDPData)
+		if err != nil {
+		log.Fatalf("Failed to decode data: %v", err)
+	}
+
+
+		
+
+	//fmt.Println(countryData)
+
+	//fmt.Println(countryData[0].CountryID, countryData[0].Iso2Code, countryData[0].Name)
+
+	//return country.Country{CountryID: }
+	return country.Country{
+		CountryID: countryInfoData[0].CountryID,
+		ISO3Code: countryGDPData[0].CountryID,
+		Name: countryInfoData[0].Name,
+		GDP: countryGDPData[0].GDPValue,
+	}
+
+
+}
+
 func initServer() {
 	fmt.Println("Server Started!!")
-	requestCountryByISO3("USA")
+	var aCountry = requestCountryByISO3("USA")
+	println(aCountry.Name)
+	fmt.Printf("%.0f\n", aCountry.GDP)
+	//makeRequest()
 }

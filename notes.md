@@ -279,3 +279,13 @@ Once that works, add the rest.
 That will teach you considerably more backend engineering than immediately creating a giant architecture.
 
 [1]: https://datahelpdesk.worldbank.org/knowledgebase/articles/889392?utm_source=chatgpt.com "About the Indicators API Documentation – World Bank Data Help Desk"
+
+
+
+
+When someone searches for a country by name or Iso3 ticker, we return that countries information
+	Name	string
+	Population	int64
+	GDP		float64
+	Imports	[]string
+	Exports	[]string

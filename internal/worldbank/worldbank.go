@@ -1,4 +1,5 @@
 package worldbank
+
 type GDPResponse struct {
 
 	Indicator struct {
@@ -13,7 +14,7 @@ type GDPResponse struct {
 
 	CountryISO3Code string  `json:"countryiso3code"`
     Date            string  `json:"date"`
-    GDPValue           float64 `json:"value"`
+    GDPValue        float64 `json:"value"`
 }
 
 type CountryInfo struct {
