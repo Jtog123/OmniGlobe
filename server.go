@@ -108,7 +108,15 @@ func makeRequest() {
 
 
 
-var countriesMap = make(map[string]string)
+//var countriesMap = make(map[string]string)
+
+
+// A map with a mutex that allows for concurrent reads/writes to the map
+var (
+	countriesMap = make(map[string]string)
+	mapMutex	sync.RWMutex
+
+)
 
 
 func requestCountryByISO3Parallel(iso3Code string) (country.Country, error) {
@@ -306,8 +314,13 @@ func requestCountryByISO3(iso3Code string) country.Country {
 }
 
 // add autocomplete if the user mispells the country there will be a key error
-func getISO3Identifier(countryName string) (string) { //countryName string
+func getISO3Identifier(countryName string) (string) { 
+	//read lock for safe concurrent reads
+	mapMutex.RLock()
+	defer mapMutex.RUnlock() //guarantee unlock when functions returns
+
 	iso3, ok := countriesMap[countryName]
+	mapMutex.RUnlock()
 	if !ok {
 		return "" //adjust this later
 	}
@@ -357,16 +370,16 @@ func initData() {
 		log.Fatalf("Failed to decode country array: %v", err)
 	}
 
+	mapMutex.Lock()
 	for _, country := range countries {
 		//fmt.Printf("ISO3 (ID): %-5s | ISO2: %-4s | Name: %s\n", country.ID, country.ISO2Code, country.Name)
-
 		//countriesMap[country.ID] = country.Name
 		countriesMap[country.Name] = country.ID
 
 	}
+	mapMutex.Unlock()
 	//fmt.Println(countriesMap)
 
-	
 	
 }
 
